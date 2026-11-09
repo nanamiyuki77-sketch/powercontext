@@ -131,8 +131,8 @@ _FINANCIAL_CONCEPTS = (
     (r"\bebitda\b", ("operating income", "depreciation amortization", "cash flows")),
     (r"\b(?:capex|capital expenditures?)\b", ("capital spending", "capital expenditures", "cash flows investing")),
     (r"\b(?:d\s*&\s*a|depreciation|amortization)\b", ("depreciation amortization",)),
-    (r"\b(?:p\s*&\s*l|income statements?|earnings)\b", ("consolidated statements income", "statements operations")),
-    (r"\b(?:cash flow|cash flows)\b", ("consolidated statements cash flows",)),
+    (r"\b(?:p\s*&\s*l|income statements?|earnings)\b", ("consolidated statement income", "statement operations")),
+    (r"\b(?:cash flow|cash flows)\b", ("consolidated statement cash flows",)),
     (r"\b(?:balance sheets?|assets|liabilities)\b", ("consolidated balance sheets",)),
     (r"\b(?:revenue|revenues|sales)\b", ("net sales revenue",)),
     (
@@ -140,6 +140,7 @@ _FINANCIAL_CONCEPTS = (
         (
             "geographic segments",
             "international operations",
+            "reportable segments",
         ),
     ),
     (
@@ -153,12 +154,54 @@ _FINANCIAL_CONCEPTS = (
         r"\b(?:restructuring|reorganization)\b",
         (
             "restructuring charges",
-            "consolidated statements income",
+            "consolidated statement income",
         ),
     ),
     (r"\b(?:dividends?|repurchases?|buybacks?)\b", ("dividends share repurchases",)),
     (r"\b(?:debt|borrowings?|leverage)\b", ("debt borrowings",)),
 )
+
+
+def _retrieval_terms(text: str) -> tuple[str, ...]:
+    from powercontext.builtin.artifacts.search import analyze_fts_query
+
+    # Match common inflections locally without changing captured evidence text.
+    terms = analyze_fts_query(text).split()
+    return tuple(
+        term[:-3] + "y"
+        if term.endswith("ies")
+        else term[:-1]
+        if len(term) > 3 and term.endswith("s") and not term.endswith("ss")
+        else term
+        for term in terms
+    )
+
+
+def _pdf_queries(normalized: str) -> tuple[list[str], list[str]]:
+    from powercontext.builtin.artifacts.search import analyze_fts_query
+
+    keywords = analyze_fts_query(normalized)
+    queries = [keywords]
+    facets: list[str] = []
+    for pattern, expansions in _FINANCIAL_CONCEPTS:
+        if re.search(pattern, normalized):
+            queries.extend(expansions)
+            facets.extend(expansions)
+    # Short query variants prevent long natural-language instructions from suppressing evidence.
+    queries.extend(analyze_fts_query(part) for part in re.split(r"[?.;]", normalized) if part.strip())
+    return list(dict.fromkeys(query for query in queries if query.strip())), facets
+
+
+def _page_relevance(body: tuple[str, ...], heading: tuple[str, ...], query: str) -> float:
+    terms = _retrieval_terms(query)
+    distinct = set(terms)
+    if not distinct:
+        return 0.0
+    coverage = len(distinct.intersection(body)) / len(distinct)
+    phrase = " " + " ".join(terms) + " "
+    exact = len(terms) > 1 and phrase in " " + " ".join(body) + " "
+    title = len(terms) > 1 and phrase in " " + " ".join(heading) + " "
+    return coverage + 2 * exact + 5 * title
 
 
 async def search_pdf_pages(
@@ -168,27 +211,33 @@ async def search_pdf_pages(
 ) -> tuple[MemoryCitation, ...]:
     """Fuse bounded lexical searches and return distinct, real page citations."""
     from powercontext.builtin.artifacts.memory.models import MemoryCitation, MemoryHit
-    from powercontext.builtin.artifacts.search import analyze_fts_query
     from powercontext.builtin.runtime.models import GetMemoryEntryRequest, SearchMemoryRequest
 
     if limit <= 0 or not question.strip():
         return ()
     normalized = re.sub(r"\bfy\s*(\d{4})\b", r"\1", question.lower())
-    keywords = analyze_fts_query(normalized)
-    queries = [keywords]
-    for pattern, expansions in _FINANCIAL_CONCEPTS:
-        if re.search(pattern, normalized):
-            queries.extend(expansions)
-    # Short query variants prevent long natural-language instructions from suppressing evidence.
-    queries.extend(analyze_fts_query(part) for part in re.split(r"[?.;]", normalized) if part.strip())
-    queries = list(dict.fromkeys(query for query in queries if query.strip()))
+    queries, facets = _pdf_queries(normalized)
     scores: dict[str, float] = defaultdict(float)
     hits: dict[str, MemoryHit] = {}
+    rankings: dict[str, list[str]] = {}
+    terms_by_id: dict[str, tuple[str, ...]] = {}
+    headings: dict[str, tuple[str, ...]] = {}
+
+    def relevance(identifier: str, query: str) -> float:
+        return _page_relevance(terms_by_id[identifier], headings[identifier], query)
+
     for query in queries:
         page = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=max(100, limit * 5)))
-        for rank, hit in enumerate(page.hits, start=1):
+        for hit in page.hits:
             hits[hit.entry_version_id] = hit
-            scores[hit.entry_version_id] += 1.0 / (60 + rank)
+            body = hit.text.partition("\n")[2]
+            terms_by_id[hit.entry_version_id] = _retrieval_terms(body)
+            headings[hit.entry_version_id] = _retrieval_terms(" ".join(body.split()[:40]))
+        # OR matches are candidates, not equally strong evidence for a phrase or statement title.
+        ranked = sorted(enumerate(page.hits), key=lambda pair: (-relevance(pair[1].entry_version_id, query), pair[0]))
+        rankings[query] = [hit.entry_version_id for _, hit in ranked]
+        for rank, identifier in enumerate(rankings[query], start=1):
+            scores[identifier] += 1.0 / (60 + rank)
     question_terms = set(re.findall(r"[a-z]+|\d+", normalized))
     generic = {"annual", "report", "form", "k", "q", "the", "inc", "corporation", "company", "corp"}
 
@@ -203,7 +252,20 @@ async def search_pdf_pages(
 
     citations = []
     seen: set[str] = set()
-    for identifier in sorted(hits, key=lambda item: (-score(item), item)):
+    # Reserve coverage for explicit evidence facets before generic mentions can crowd them out.
+    preferred = list(
+        dict.fromkeys(
+            identifier
+            for facet in dict.fromkeys(facets)
+            for identifier in sorted(rankings[facet], key=lambda item: (-relevance(item, facet), -score(item), item))[
+                :2
+            ]
+            if relevance(identifier, facet) >= 3
+        )
+    )
+    preferred.sort(key=lambda item: (-score(item), item))
+    ordered = list(dict.fromkeys([*preferred[: limit // 2], *sorted(hits, key=lambda item: (-score(item), item))]))
+    for identifier in ordered:
         hit = hits[identifier]
         citation = MemoryCitation(
             memory_ref=hit.memory_ref, entry_id=hit.entry_id, entry_version_id=hit.entry_version_id

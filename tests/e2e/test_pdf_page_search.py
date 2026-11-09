@@ -16,6 +16,8 @@
 
 import asyncio
 
+import pytest
+
 from powercontext.builtin.artifacts.memory import MemoryEntryInput
 from powercontext.builtin.persistence.sqlite import SQLiteConfig
 from powercontext.builtin.runtime import (
@@ -129,5 +131,56 @@ def test_scope_deduplication_synonyms_limits_and_revision_citations(tmp_path):
             memory = runtime.memory.for_scope(scope.scope_id)
             assert (await memory.flush()).source_count == 1
             assert (await memory.get(GetMemoryEntryRequest(citation=citations[0]))).entry == original
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("title", ["Consolidated Statement of Income", "Consolidated Statements of Income"])
+def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title):
+    config = BuiltinConfig(database=SQLiteConfig(url=f"sqlite+aiosqlite:///{tmp_path / 'ranking.db'}"))
+    registry = SourceDefinitionRegistry((PDF_PAGE_SOURCE_DEFINITION,))
+    texts = [
+        f"{title}\nNet revenue 1200. Operating income 300. Net income 180.",
+        "Consolidated Statements of Cash Flows\nDepreciation amortization 50. Capital expenditures 80.",
+        *[
+            f"Note {number}. Income taxes and restructuring charges. "
+            "Consolidated income tax expense. Capital spending expenditures. "
+            "Operating income changes. Depreciation amortization policies. Cash flows investing."
+            for number in range(30)
+        ],
+    ]
+
+    async def scenario():
+        observations = [
+            project_source_for_transport(
+                registry,
+                await registry.resolve(
+                    PDFPageInput(document_id="ATLAS_2025_10K", document_sha256="a" * 64, page_number=number, text=text)
+                ),
+            )
+            for number, text in enumerate(texts, start=1)
+        ]
+        async with open_builtin_runtime(config, candidate_pipeline=PagePipeline()) as runtime:
+            assert runtime.scopes is not None
+            scope = await runtime.scopes.create(ScopeDraft(title="Reports", summary="PDF", idempotency_key="reports"))
+            await runtime.ingestion.register(manifest_for_definition(PDF_PAGE_SOURCE_DEFINITION))
+            for observation in observations:
+                await runtime.ingestion.submit(
+                    SubmitSourceObservation(scope_id=scope.scope_id, observation=observation)
+                )
+            await runtime.memory.for_scope(scope.scope_id).flush()
+        async with open_builtin_runtime(config) as runtime:
+            citations = await search_pdf_pages(
+                runtime.memory.for_scope(scope.scope_id),
+                "Calculate Atlas EBITDA less capex in FY2025 using the income statement and cash flows.",
+                limit=20,
+            )
+            entries = [
+                (await runtime.memory.for_scope(scope.scope_id).get(GetMemoryEntryRequest(citation=citation))).entry
+                for citation in citations
+            ]
+            identities = [entry.sources[0].source_id for entry in entries]
+            assert {observations[0].name, observations[1].name} <= set(identities)
+            assert len(identities) == len(set(identities)) <= 20
 
     asyncio.run(scenario())
