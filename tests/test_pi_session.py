@@ -19,8 +19,8 @@ import json
 
 import pytest
 
-from powercontext.sources import SourceDefinitionRegistry, SourceMaterialization
-from powercontext.sources.pi_session import PI_EVENT_SOURCE_DEFINITION, PiSessionInput, parse_pi_session
+from powercontext.sources import SourceDefinitionRegistry, SourceMaterialization, TextEvidence
+from powercontext.sources.pi_session import PI_EVENT_SOURCE_DEFINITION, PiEventSource, PiSessionInput, parse_pi_session
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY
 
 
@@ -143,12 +143,13 @@ def test_full_large_tool_result_and_record_survive_source_roundtrip():
     event = parse_pi_session(archive([record]))[0]
     registry = SourceDefinitionRegistry((PI_EVENT_SOURCE_DEFINITION,))
     source = asyncio.run(registry.resolve(event))
+    assert isinstance(source, PiEventSource)
     assert source.materialization is SourceMaterialization.CAPTURED
     assert asyncio.run(registry.read(source)) == event
-    evidence = registry.project(source, TEXT_EVIDENCE_PROJECTION_KEY)
-    assert evidence["content"] == "toolResult: [tool_result read call] " + output
+    evidence = TextEvidence.model_validate(registry.project(source, TEXT_EVIDENCE_PROJECTION_KEY))
+    assert evidence.content == "toolResult: [tool_result read call] " + output
     assert source.record == record
-    assert evidence["metadata"] == {
+    assert evidence.metadata == {
         "session_id": "session",
         "event_id": "a",
         "parent_id": None,

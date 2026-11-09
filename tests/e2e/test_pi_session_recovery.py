@@ -16,6 +16,7 @@
 
 import asyncio
 import json
+from typing import Any
 
 import pytest
 
@@ -74,7 +75,7 @@ class RuntimeSink:
 def test_partial_failure_restart_off_branch_mutation_and_repair(tmp_path, reject):
     path = tmp_path / "pi.jsonl"
     config = BuiltinConfig(database=SQLiteConfig(url=f"sqlite+aiosqlite:///{tmp_path / 'runtime.db'}"))
-    records = [
+    records: list[dict[str, Any]] = [
         {"type": "message", "id": "root", "parentId": None, "message": {"role": "user", "content": "shared"}},
         {"type": "message", "id": "left", "parentId": "root", "message": {"role": "assistant", "content": "left"}},
         {"type": "message", "id": "right", "parentId": "root", "message": {"role": "assistant", "content": "right"}},
@@ -97,6 +98,7 @@ def test_partial_failure_restart_off_branch_mutation_and_repair(tmp_path, reject
 
     async def scenario():
         async with open_builtin_runtime(config) as runtime:
+            assert runtime.scopes is not None
             scope = await runtime.scopes.create(ScopeDraft(title="Pi", summary="Recovery", idempotency_key="pi"))
             await runtime.ingestion.register(manifest_for_definition(PI_EVENT_SOURCE_DEFINITION))
         binding = ConnectorBinding(
