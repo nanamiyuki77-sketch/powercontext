@@ -16,14 +16,14 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from powercontext.builtin.persistence.cursors import SourceCursorRepository
 from powercontext.builtin.persistence.database import AsyncDatabase
 from powercontext.builtin.persistence.processing_intents import ArtifactProcessingIntentRepository
 from powercontext.builtin.persistence.supervision import ArtifactProcessingFence, ArtifactProcessingLeaseRepository
-from powercontext.builtin.persistence.tables import PROFILE_POLICIES_TABLE, SOURCE_JOURNAL_HEADS_TABLE
+from powercontext.builtin.persistence.tables import PROFILE_POLICIES_TABLE, SOURCE_JOURNAL_HEADS_TABLE, SOURCES_TABLE
 
 
 async def enabled_profile_scopes(connection: AsyncConnection, scope_ids: tuple[str, ...]) -> frozenset[str]:
@@ -48,10 +48,47 @@ async def enabled_profile_scopes(connection: AsyncConnection, scope_ids: tuple[s
 class SourceProcessingPendingProvider:
     """Inspect journal metadata, never Source bodies, prompts, or models."""
 
-    def __init__(self, database: AsyncDatabase, binding_name: str, artifact_family: str) -> None:
+    def __init__(
+        self, database: AsyncDatabase, binding_name: str, artifact_family: str, count_threshold: int | None = None
+    ) -> None:
         self._database = database
         self._binding = binding_name
         self._family = artifact_family
+        self._count_threshold = count_threshold
+        self._count_after: str | None = None
+
+    async def admit_count_ready(self, limit: int, fence: ArtifactProcessingFence) -> tuple[str, ...]:
+        """Accept bounded count-ready scopes using successful cursors, not dirty counters."""
+        if self._count_threshold is None:
+            return ()
+        heads = SOURCE_JOURNAL_HEADS_TABLE
+        statement = select(heads.c.scope_id, heads.c.position).order_by(heads.c.scope_id).limit(limit)
+        if self._count_after is not None:
+            statement = statement.where(heads.c.scope_id > self._count_after)
+        admitted = []
+        async with self._database.transaction() as connection:
+            await ArtifactProcessingLeaseRepository().require_fence(connection, fence)
+            rows = (await connection.execute(statement)).all()
+            intents = ArtifactProcessingIntentRepository()
+            for scope, high in rows:
+                cursor = await SourceCursorRepository().load(connection, scope, self._binding)
+                position = 0 if cursor is None else cursor.cursor.sequence
+                if int(high) - position < self._count_threshold:
+                    continue
+                intent = await intents.load(connection, scope, self._binding, for_update=True)
+                # Accepted work owns its retries and Topic Memory's remaining wave.
+                if intent is not None and intent.requested_generation > intent.handled_generation:
+                    continue
+                count = await connection.scalar(
+                    select(func.count())
+                    .select_from(SOURCES_TABLE)
+                    .where(SOURCES_TABLE.c.scope_id == scope, SOURCES_TABLE.c.journal_position > position)
+                )
+                if count is not None and count >= self._count_threshold:
+                    await intents.request(connection, scope, self._binding)
+                    admitted.append(str(scope))
+        self._count_after = str(rows[-1][0]) if len(rows) == limit else None
+        return tuple(admitted)
 
     async def reconcile(self, after_scope_id: str | None, limit: int, *, fence: ArtifactProcessingFence) -> str | None:
         heads = SOURCE_JOURNAL_HEADS_TABLE

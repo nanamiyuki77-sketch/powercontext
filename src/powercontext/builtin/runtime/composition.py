@@ -771,6 +771,12 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
             entrypoint = partial(run_family_worker, FamilyWorkerSpec(config=config, worker_security=worker_security))
         interval = None if family == "profile" else automatic[family]
         binding = canonical[family]
+        threshold = getattr(config.runtime, f"{prefix}_source_count_threshold", None)
+        pending_provider = (
+            None
+            if family == "skill"
+            else SourceProcessingPendingProvider(contexts.database, binding, family, threshold)
+        )
         configured.append(
             ArtifactProcessingBinding(
                 binding_name=binding,
@@ -783,9 +789,10 @@ def _artifact_processing_bindings(  # noqa: C901 - validate and assemble one reg
                 if family == "profile" and config.runtime.profile_schedule_enabled
                 else None,
                 timezone=config.runtime.profile_timezone if family == "profile" else "Asia/Shanghai",
-                pending_provider=None
-                if family == "skill"
-                else SourceProcessingPendingProvider(contexts.database, binding, family),
+                pending_provider=pending_provider,
+                count_admitter=pending_provider.admit_count_ready
+                if threshold is not None and pending_provider is not None
+                else None,
                 automatic_scope_filter=enabled_profile_scopes if family == "profile" else None,
             )
         )

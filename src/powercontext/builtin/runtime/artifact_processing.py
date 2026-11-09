@@ -117,6 +117,7 @@ class ArtifactProcessingBinding:
     # Only automatic admission is filtered; already accepted requests retain
     # their own Worker authorization and domain completion semantics.
     automatic_scope_filter: Callable[[AsyncConnection, tuple[str, ...]], Awaitable[frozenset[str]]] | None = None
+    count_admitter: Callable[[int, ArtifactProcessingFence], Awaitable[tuple[str, ...]]] | None = None
 
     def __post_init__(self) -> None:
         if not self.binding_name or self.binding_name != self.binding_name.strip():
@@ -656,6 +657,10 @@ class ArtifactProcessingSupervisor:
         else:
             await self._discover_requested(state)
             await self._discover_automatic(state)
+        capacity = min(self._fresh_capacity(state), _DISCOVERY_PAGE_SIZE)
+        if binding.count_admitter is not None and capacity > 0:
+            for scope in await binding.count_admitter(capacity, self._require_current_fence()):
+                self._enqueue(state, scope)
 
     async def _discover_requested(self, state: _FamilyState) -> None:
         capacity = self._fresh_capacity(state)
@@ -1083,6 +1088,9 @@ class ArtifactProcessingSupervisor:
         for state in self._families.values():
             if len(state.running) >= state.binding.max_workers:
                 continue
+            if state.binding.count_admitter is not None:
+                # Journal-only lineage writes need not emit a capture notification.
+                deadlines.append(now + self._tick)
             deadlines.extend(
                 retry.deadline
                 for scope, retry in state.retries.items()
