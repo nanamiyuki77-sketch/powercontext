@@ -28,6 +28,12 @@ from powercontext.builtin.artifacts.memory.models import MemoryCitation, MemoryH
 from powercontext.builtin.artifacts.profile.models import Profile
 from powercontext.builtin.artifacts.topic_memory import TopicMemory, TopicMemorySearchHit
 from powercontext.builtin.runtime.errors import PreparedContextInvariantError
+from powercontext.builtin.runtime.evidence_selection import (
+    RankedPassage,
+    matched_excerpt,
+    packing_options,
+    rank_passages,
+)
 from powercontext.builtin.runtime.models import PrepareContextRequest, PreparedContext
 from powercontext.builtin.runtime.prepared_code import (
     CodeEvidenceRef,
@@ -56,6 +62,11 @@ class _PreparedContextEntry:
     citation: dict[str, object]
     content: str
     truncated: bool
+
+    def fragment(self, span: RankedPassage) -> EvidenceFragment:
+        if not isinstance(self.origin, MemoryEntryAddress):
+            raise PreparedContextInvariantError("text-scope-missing")
+        return EvidenceFragment(self.origin, span.start, span.end, self.content[span.start : span.end])
 
 
 @dataclass(frozen=True)
@@ -106,6 +117,7 @@ class PreparedContextBuild:
     origins: tuple[PreparedContextOrigin, ...]
     omissions: PreparedContextOmissions = PreparedContextOmissions()
     code_origins: tuple[CodeEvidenceRef, ...] = ()
+    fragments: tuple[EvidenceFragment, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -115,6 +127,14 @@ class MemoryEntryAddress:
     memory: ArtifactAddress
     entry_id: str
     entry_version_id: str
+
+
+@dataclass(frozen=True)
+class EvidenceFragment:
+    address: MemoryEntryAddress
+    start: int
+    end: int
+    text: str
 
 
 PreparedContextOrigin = MemoryCitation | ArtifactRef | MemoryEntryAddress | ArtifactAddress
@@ -211,6 +231,14 @@ class PreparedContextBuilder:
         profile_candidates: Sequence[PreparedProfileCandidate] = (),
         code_candidates: Sequence[PreparedCodeCandidate] = (),
     ) -> PreparedContextBuild:
+        if request.evidence_selection:
+            entries = [
+                entry
+                for group in memory_candidates
+                for entry in self._memory_entries(group.memory_ref, group.hits, scope_id=group.scope_id)
+            ]
+            return self._build_evidence(request, entries)
+
         if request.include_code:
 
             def historical(history_request: PrepareContextRequest, entries: int) -> PreparedContextBuild:
@@ -255,6 +283,65 @@ class PreparedContextBuilder:
             origins=origins,
             omissions=omissions,
         )
+
+    def _build_evidence(
+        self, request: PrepareContextRequest, entries: Sequence[_PreparedContextEntry]
+    ) -> PreparedContextBuild:
+        documents = [entry.content for entry in entries]
+        selected: list[RankedPassage] = []
+        content = ""
+        for passage in rank_passages(request.query, documents):
+            options = (
+                (self._render_evidence(entries, spans), spans)
+                for spans in packing_options(selected, passage, request.max_bytes)
+            )
+            choice = min(options, key=lambda option: len(option[0].encode()), default=None)
+            if choice is None:
+                continue
+            rendered, spans = choice
+            if len(rendered.encode()) <= request.max_bytes:
+                content, selected = rendered, spans
+            elif not selected:
+                width = (passage.end - passage.start) // 2
+                while width:
+                    excerpt = matched_excerpt(request.query, documents[passage.document], passage, width)
+                    if excerpt is None:
+                        break
+                    rendered = self._render_evidence(entries, [excerpt])
+                    if len(rendered.encode()) <= request.max_bytes:
+                        content, selected = rendered, [excerpt]
+                        break
+                    width //= 2
+
+        if not selected:
+            return PreparedContextBuild(context=self.empty(), origins=())
+        fragments = tuple(entries[span.document].fragment(span) for span in selected)
+        return PreparedContextBuild(
+            context=PreparedContext(status="ready", content=content, content_bytes=len(content.encode())),
+            origins=tuple(fragment.address for fragment in fragments),
+            fragments=fragments,
+        )
+
+    @staticmethod
+    def _render_evidence(entries: Sequence[_PreparedContextEntry], spans: Sequence[RankedPassage]) -> str:
+        items: list[dict[str, object]] = []
+        for span in spans:
+            entry = entries[span.document]
+            fragment = entry.fragment(span)
+            origin = fragment.address
+            citation = {
+                "scope_id": origin.memory.scope_id,
+                "memory_ref": origin.memory.artifact.model_dump(mode="json"),
+                "entry_id": origin.entry_id,
+                "entry_version_id": origin.entry_version_id,
+            }
+            items.append({
+                "citation": citation,
+                "content": fragment.text,
+                "start": span.start,
+                "end": span.end,
+            })
+        return _render_items(items)
 
     def probe_budget(
         self,
@@ -686,10 +773,11 @@ def _interleave_groups(groups: Sequence[Sequence[_Item]]) -> tuple[_Item, ...]:
 
 
 def _render(entries: Sequence[_PreparedContextEntry]) -> str:
-    envelope = {
-        "trust": "untrusted_history",
-        "items": [_render_entry(entry) for entry in entries],
-    }
+    return _render_items([_render_entry(entry) for entry in entries])
+
+
+def _render_items(items: Sequence[dict[str, object]]) -> str:
+    envelope = {"trust": "untrusted_history", "items": items}
     encoded = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
     return "\n\n".join((TRUST_POLICY, f"{_BEGIN_MARKER}\n{encoded}\n{_END_MARKER}"))
 

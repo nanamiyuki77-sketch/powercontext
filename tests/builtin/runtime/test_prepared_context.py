@@ -997,3 +997,38 @@ def test_code_opt_in_preserves_topic_assembly_selection(assembly, expect_topic) 
     assert result.context.content is not None
     assert ("Title topic-1" in result.context.content) is expect_topic
     assert "BEGIN_POWERCONTEXT_CODE_V1" in result.context.content
+
+
+def test_literal_evidence_uses_separate_scoped_addresses_and_counts_encoded_overhead():
+    builder = PreparedContextBuilder()
+    text = 'Sensor "雪" signals. ' + "Unrelated logistics. " * 100 + "The sensor detects 🌊."
+    groups = tuple(
+        PreparedMemoryCandidates(scope_id=scope, memory_ref=MEMORY_REF, hits=(_hit("same-id", text),))
+        for scope in ("project:first", "project:second")
+    )
+    request = PrepareContextRequest(query="sensor", evidence_selection=True, max_bytes=1800)
+    build = builder.build_scopes_result(request=request, current_scope_id=groups[0].scope_id, memory_candidates=groups)
+    assert build.context.content is not None
+    assert build.context.content_bytes == len(build.context.content.encode()) <= request.max_bytes
+    assert {fragment.address.memory.scope_id for fragment in build.fragments} == {group.scope_id for group in groups}
+    assert build.origins == tuple(fragment.address for fragment in build.fragments)
+    for group in groups:
+        spans = [f for f in build.fragments if f.address.memory.scope_id == group.scope_id]
+        assert any("🌊" in f.text for f in spans) and any('"雪"' in f.text for f in spans)
+        assert all(text[f.start : f.end] == f.text for f in spans)
+    tight = request.model_copy(update={"max_bytes": build.context.content_bytes - 1})
+    smaller = builder.build_scopes_result(request=tight, current_scope_id=groups[0].scope_id, memory_candidates=groups)
+    assert smaller.context.content_bytes <= tight.max_bytes
+
+
+def test_small_budget_can_select_part_of_a_long_sentence():
+    text = "前" * 130 + " sensor " + "后" * 130
+    build = PreparedContextBuilder().build_result(
+        request=PrepareContextRequest(query="sensor", evidence_selection=True, max_bytes=620),
+        scope_id="project:meter",
+        memory_ref=MEMORY_REF,
+        hits=(_hit("sensor", text),),
+    )
+    (fragment,) = build.fragments
+    assert "sensor" in fragment.text == text[fragment.start : fragment.end]
+    assert build.context.content_bytes <= 620
