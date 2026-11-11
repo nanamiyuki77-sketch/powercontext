@@ -56,7 +56,8 @@ def test_scope_deduplication_synonyms_limits_and_revision_citations(tmp_path):
             document_id="ATLAS_2025_10K",
             document_sha256="a" * 64,
             page_number=1,
-            text="Consolidated statements of income. Net sales revenue 1500. Operating income 300.",
+            text="Consolidated statements of income. Net sales revenue 1500. Operating income 300."
+            + " Financial statement disclosure." * 300,
         ),
         PDFPageInput(
             document_id="ATLAS_2025_10K",
@@ -116,6 +117,7 @@ def test_scope_deduplication_synonyms_limits_and_revision_citations(tmp_path):
                     evidence = TextEvidence.model_validate(by_id[identity].projection(TEXT_EVIDENCE_PROJECTION_KEY))
                     assert entry.text == evidence.content
                     found.append(identity)
+                assert observations[3].name not in found
                 assert target in found
                 assert len(found) == len(set(found))
             citations = await search_pdf_pages(memory, "Atlas revenue FY2025", limit=1)

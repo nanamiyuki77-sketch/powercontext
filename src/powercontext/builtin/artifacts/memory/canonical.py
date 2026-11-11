@@ -87,6 +87,15 @@ def normalize_text(value: str) -> str:
     return normalized
 
 
+def normalize_entry_body(value: str, source_refs: Sequence[object]) -> str:
+    """A captured physical page must remain readable as a single exact entry."""
+    if len(source_refs) == 1:
+        ref = source_refs[0]
+        if isinstance(ref, Mapping) and ref.get("source_type") == "pdf-page" and value.strip():
+            return value.strip()
+    return normalize_text(value)
+
+
 def normalize_query(value: str) -> str:
     """Normalize one transient retrieval query.
 
@@ -160,7 +169,7 @@ def entry_content_bytes(
 
     return canonical_json({
         "kind": normalize_kind(kind),
-        "text": normalize_text(text),
+        "text": normalize_entry_body(text, source_refs),
         "source_refs": normalize_refs(source_refs),
         "artifact_refs": normalize_refs(artifact_refs),
     })

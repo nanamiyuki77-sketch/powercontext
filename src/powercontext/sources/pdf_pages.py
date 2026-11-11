@@ -21,6 +21,7 @@ import io
 import json
 import re
 from collections import defaultdict
+from functools import cache
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
@@ -204,6 +205,34 @@ def _page_relevance(body: tuple[str, ...], heading: tuple[str, ...], query: str)
     return coverage + 2 * exact + 5 * title
 
 
+def _named_reports(document_ids: set[str], question: str) -> set[str]:
+    # Report identifiers commonly join issuer words and append a fiscal year and filing type.
+    ignored = {"inc", "corp", "corporation", "company", "form", "annual", "report", "fy", "10k", "10q", "k", "q"}
+    tokens = re.findall(r"[a-z0-9]+", question.lower())
+    phrases = {"".join(tokens[i:j]) for i in range(len(tokens)) for j in range(i + 1, min(i + 8, len(tokens)) + 1)}
+    named = set()
+    for doc in document_ids:
+        words = re.findall(r"[a-z0-9]+", doc.lower())
+        issuer = "".join(w for w in words if w not in ignored and not w.isdigit())
+        if issuer and issuer in phrases:
+            named.add(doc)
+    return named
+
+
+async def _page_pool(memory: ScopedMemoryApplication, normalized: str) -> tuple[dict[str, str], set[str], int]:
+    entries = (await memory.list()).entries
+    page_sources = {}
+    documents = set()
+    for record in entries:
+        sources = {ref.source_id for ref in record.entry.sources if ref.source_type == "pdf-page"}
+        if len(sources) == 1:
+            page_sources[record.entry.entry_version_id] = sources.pop()
+            documents.add(record.entry.text.partition("\n")[0])
+    named = _named_reports(documents, normalized)
+    restrict = bool(named and named != documents)
+    return page_sources, named if restrict else set(), len(entries) if restrict else 0
+
+
 async def search_pdf_pages(
     memory: ScopedMemoryApplication,
     question: str,
@@ -211,7 +240,7 @@ async def search_pdf_pages(
 ) -> tuple[MemoryCitation, ...]:
     """Fuse bounded lexical searches and return distinct, real page citations."""
     from powercontext.builtin.artifacts.memory.models import MemoryCitation, MemoryHit
-    from powercontext.builtin.runtime.models import GetMemoryEntryRequest, SearchMemoryRequest
+    from powercontext.builtin.runtime.models import SearchMemoryRequest
 
     if limit <= 0 or not question.strip():
         return ()
@@ -220,21 +249,28 @@ async def search_pdf_pages(
     scores: dict[str, float] = defaultdict(float)
     hits: dict[str, MemoryHit] = {}
     rankings: dict[str, list[str]] = {}
-    terms_by_id: dict[str, tuple[str, ...]] = {}
-    headings: dict[str, tuple[str, ...]] = {}
+
+    @cache
+    def page_terms(identifier: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        body = hits[identifier].text.partition("\n")[2]
+        return _retrieval_terms(body), _retrieval_terms(" ".join(body.split()[:40]))
 
     def relevance(identifier: str, query: str) -> float:
-        return _page_relevance(terms_by_id[identifier], headings[identifier], query)
+        body, heading = page_terms(identifier)
+        return _page_relevance(body, heading, query)
 
+    page_sources, named, report_depth = await _page_pool(memory, normalized)
+    depth = max(100, limit * 5, report_depth)
     for query in queries:
-        page = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=max(100, limit * 5)))
-        for hit in page.hits:
-            hits[hit.entry_version_id] = hit
-            body = hit.text.partition("\n")[2]
-            terms_by_id[hit.entry_version_id] = _retrieval_terms(body)
-            headings[hit.entry_version_id] = _retrieval_terms(" ".join(body.split()[:40]))
+        page = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=depth))
+        eligible = [
+            hit
+            for hit in page.hits
+            if hit.entry_version_id in page_sources and (not named or hit.text.partition("\n")[0] in named)
+        ]
+        hits.update((hit.entry_version_id, hit) for hit in eligible)
         # OR matches are candidates, not equally strong evidence for a phrase or statement title.
-        ranked = sorted(enumerate(page.hits), key=lambda pair: (-relevance(pair[1].entry_version_id, query), pair[0]))
+        ranked = sorted(enumerate(eligible), key=lambda pair: (-relevance(pair[1].entry_version_id, query), pair[0]))
         rankings[query] = [hit.entry_version_id for _, hit in ranked]
         for rank, identifier in enumerate(rankings[query], start=1):
             scores[identifier] += 1.0 / (60 + rank)
@@ -270,11 +306,10 @@ async def search_pdf_pages(
         citation = MemoryCitation(
             memory_ref=hit.memory_ref, entry_id=hit.entry_id, entry_version_id=hit.entry_version_id
         )
-        entry = (await memory.get(GetMemoryEntryRequest(citation=citation))).entry
-        pages = {source.source_id for source in entry.sources if source.source_type == "pdf-page"}
-        if len(pages) != 1 or pages & seen:
+        source_id = page_sources[identifier]
+        if source_id in seen:
             continue
-        seen.update(pages)
+        seen.add(source_id)
         citations.append(citation)
         if len(citations) == limit:
             break
