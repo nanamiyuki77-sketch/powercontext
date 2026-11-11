@@ -445,6 +445,7 @@ class TopicMemoryRepository:
         query_vector: tuple[float, ...] | None = None,
         embedding_profile: EmbeddingProfile | None = None,
         admission: AdmissionFloor | None = None,
+        unavailable: set[tuple[str, int]] | None = None,
     ) -> TopicMemorySearchResult:
         """Search current complete projections and fuse two or four logical channels.
 
@@ -480,7 +481,7 @@ class TopicMemoryRepository:
         request = TopicMemorySearchRequest(
             query=query,
             analyzed_query=" ".join(query_terms),
-            candidate_limit=min(MAX_TOPIC_MEMORY_CHANNEL_CANDIDATES, max(limit * 4, 32)),
+            candidate_limit=min(MAX_TOPIC_MEMORY_CHANNEL_CANDIDATES, max(limit * 4, 32) + len(unavailable or ())),
             mode=used_mode,
             query_vector=query_vector,
             embedding_profile=embedding_profile,
@@ -488,6 +489,14 @@ class TopicMemoryRepository:
         )
         channels = await self.index.search(connection, scope_id, request)
         await self._check_retrieval_shape(connection)
+        if unavailable:
+            updates = {}
+            for name in ("topic_fts", "detail_fts", "topic_vector", "detail_vector"):
+                hits = getattr(channels, name)
+                updates[name] = tuple(
+                    hit for hit in hits if (hit.artifact_ref.artifact_id, hit.artifact_ref.revision) not in unavailable
+                )
+            channels = channels.model_copy(update=updates)
         outcome = _fuse_topic_memory_rankings(query, channels, limit, mode=used_mode, admission=admission)
         return TopicMemorySearchResult(
             mode=used_mode,

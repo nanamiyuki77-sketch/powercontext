@@ -190,6 +190,7 @@ from powercontext.builtin.runtime.protocols import (
 )
 from powercontext.builtin.runtime.recall import RelationalRecallTokenEstimator
 from powercontext.builtin.runtime.recurrence import RelationalRecurrenceLedger
+from powercontext.builtin.runtime.source_lifecycle import ScopedSourceLifecycle, unavailable_topics
 from powercontext.builtin.runtime.statistics import RelationalScopedStatistics
 from powercontext.builtin.scope import ScopeApplication
 from powercontext.builtin.scope.subject_sources import SubjectSourceService
@@ -995,6 +996,7 @@ class RelationalContexts:
                 connection,
                 scope,
                 query,
+                unavailable=await unavailable_topics(connection, scope),
                 limit=limit,
                 mode=mode,
                 query_vector=query_vector,
@@ -1420,6 +1422,9 @@ class RelationalContexts:
             triggers=triggers,
         )
         return self._contexts.setdefault(scope, context)
+
+    def lifecycle_for_scope(self, scope_id: str) -> ScopedSourceLifecycle:
+        return ScopedSourceLifecycle(self._services_for(scope_id))
 
     def _services_for(self, scope_id: str) -> _ScopedServices:
         scope = validate_scope_id(scope_id)

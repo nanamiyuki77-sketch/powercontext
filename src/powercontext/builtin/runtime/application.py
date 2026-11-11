@@ -249,6 +249,7 @@ from powercontext.builtin.runtime.recall_sufficiency import (
     build_recall_candidates,
     recall_effort,
 )
+from powercontext.builtin.runtime.source_lifecycle import SourceLifecycleApplication
 from powercontext.builtin.runtime.statistics import RelationalScopedStatistics, overview_selection
 from powercontext.builtin.scope import ScopeApplication, ScopeDescriptor, ScopeSelection
 from powercontext.builtin.scope.subject_sources import SubjectSourceService
@@ -2990,6 +2991,7 @@ class BuiltinRuntime:
         *,
         provider: PowerContextProvider[BuiltinSources, BuiltinArtifacts, BuiltinTriggers],
         capabilities: RuntimeCapabilities,
+        lifecycle: SourceLifecycleApplication | None = None,
         code_service: CodeService | None = None,
         source_window_limit: int = 100,
         context_assembly_max_entries: int = 8,
@@ -3047,6 +3049,7 @@ class BuiltinRuntime:
             raise _RuntimeConfigurationError("context_assembly_max_entries")
         if scope_cache_size < 1:
             raise _RuntimeConfigurationError("scope_cache_size")
+        self.lifecycle = lifecycle
         self._provider = provider
         self._capabilities = capabilities
         self._review_service = review_service
