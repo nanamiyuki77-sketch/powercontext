@@ -138,7 +138,14 @@ def test_scope_deduplication_synonyms_limits_and_revision_citations(tmp_path):
 
 
 @pytest.mark.parametrize("title", ["Consolidated Statement of Income", "Consolidated Statements of Income"])
-def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title):
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Calculate Atlas EBITDA less capex in FY2025 using the income statement and cash flows.",
+        "Compare cash flows to operating income for Atlas.",
+    ],
+)
+def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title, question):
     config = BuiltinConfig(database=SQLiteConfig(url=f"sqlite+aiosqlite:///{tmp_path / 'ranking.db'}"))
     registry = SourceDefinitionRegistry((PDF_PAGE_SOURCE_DEFINITION,))
     texts = [
@@ -175,7 +182,7 @@ def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title
         async with open_builtin_runtime(config) as runtime:
             citations = await search_pdf_pages(
                 runtime.memory.for_scope(scope.scope_id),
-                "Calculate Atlas EBITDA less capex in FY2025 using the income statement and cash flows.",
+                question,
                 limit=20,
             )
             entries = [

@@ -24,6 +24,7 @@ import re
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
 from functools import cache
+from itertools import chain, pairwise
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
@@ -34,6 +35,9 @@ from powercontext.sources.observations import SourceObservation
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY, TextEvidence
 
 if TYPE_CHECKING:
+    from pypdf import PageObject
+    from pypdf._text_extraction._layout_mode._text_state_params import TextStateParams
+
     from powercontext.builtin.artifacts.memory.models import MemoryCitation
     from powercontext.builtin.runtime.application import ScopedMemoryApplication
     from powercontext.builtin.runtime.models import MemoryEntryRecord
@@ -69,18 +73,109 @@ class PDFPageSource(Source, PDFPageInput):
     """One complete page, bound to the original PDF byte revision."""
 
 
+def _reader_bytes(data: bytes) -> bytes:
+    # Some linearized files point to the line break immediately preceding the xref table.
+    tail = data[-1024:]
+    marker = re.search(rb"startxref\s+(\d+)\s+%%EOF\s*\Z", tail)
+    if marker:
+        offset = int(marker[1])
+        padding = re.match(rb"([\r\n]+)xref\b", data[offset : offset + 12])
+        if padding:
+            start = len(data) - len(tail) + marker.start(1)
+            return data[:start] + str(offset + len(padding[1])).encode() + data[start + len(marker[1]) :]
+    return data
+
+
+def _glyph_text(run: TextStateParams) -> str:
+    # A font can name a stylistic alternate (e.g. /a.alt) without a Unicode map.
+    if "/" not in run.text or run.font.character_map or not isinstance(run.value, bytes):
+        return run.text
+    encoding = run.font.encoding
+    if not isinstance(encoding, dict):
+        return run.text
+    from pypdf._codecs import adobe_glyphs
+
+    glyphs = (encoding.get(byte, chr(byte)) for byte in run.value)
+    return "".join(
+        adobe_glyphs.get(glyph.partition(".")[0], glyph) if glyph.startswith("/") and "." in glyph else glyph
+        for glyph in glyphs
+    )
+
+
+def _page_text(page: PageObject) -> str:
+    box = page.cropbox
+    off_page = False
+
+    def check_position(text, cm, tm, _font, _size):
+        nonlocal off_page
+        if text.strip() and not off_page:
+            x = tm[4] * cm[0] + tm[5] * cm[2] + cm[4]
+            y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
+            off_page = not (box.left <= x <= box.right and box.bottom <= y <= box.top)
+
+    plain = page.extract_text(visitor_text=check_position) or ""
+    lines = plain.splitlines()
+    cropped = off_page or box != page.mediabox
+    fragmented = len(lines) >= 5 and sum(0 < len(line.strip()) <= 3 for line in lines) > 0.4 * len(lines)
+    letter_spaced = re.search(r"(?:\b[a-zA-Z]\s+){5}[a-zA-Z]\b", plain)
+    if not plain.strip() or not (fragmented or cropped or letter_spaced):
+        return plain
+
+    return _positioned_page_text(page, plain)
+
+
+def _positioned_page_text(page: PageObject, plain: str) -> str:
+    # The locked pypdf layout decoder exposes glyph runs before fixed-width rounding.
+    from pypdf._text_extraction._layout_mode._fixed_width_page import recurse_to_target_op
+    from pypdf._text_extraction._layout_mode._text_state_manager import TextStateManager
+    from pypdf.generic import ContentStream
+
+    box = page.cropbox
+    operations = ContentStream(page["/Contents"].get_object(), page.pdf, "bytes").operations
+    try:
+        _, runs = recurse_to_target_op(
+            chain(operations, [([], b"Q")]), TextStateManager(), b"Q", page._layout_mode_fonts(), False
+        )
+    except Exception:
+        # Plain extraction also handles forms and font encodings unsupported by layout mode.
+        return plain
+    if any(run.rotated for run in runs) or Counter("".join("".join(run.text.split()) for run in runs)) != Counter(
+        "".join(plain.split())
+    ):
+        return plain
+
+    parts: list[str] = []
+    previous = None
+    for run in runs:
+        if not run.text:
+            continue
+        if run.displaced_tx < box.left or run.tx > box.right or not box.bottom <= run.ty <= box.top:
+            continue
+        if previous is not None:
+            height = min(run.font_height, previous.font_height)
+            # A negative character advance after the last glyph does not narrow its ink.
+            end = previous.displaced_tx - min(0.0, previous.Tc) * previous.transform[0] * previous.Tz / 100
+            if abs(run.ty - previous.ty) > 0.4 * height or run.tx < previous.tx - 0.5 * height:
+                parts.append("\n")
+            elif run.tx - end > 0.13 * height:
+                parts.append(" ")
+        parts.append(_glyph_text(run))
+        previous = run
+    return "".join(parts)
+
+
 def parse_pdf_document(value: PDFDocumentInput) -> tuple[PDFPageInput, ...]:
     """Extract every physical page atomically, including pages without text."""
     from pypdf import PdfReader
 
     digest = hashlib.sha256(value.content).hexdigest()
     try:
-        reader = PdfReader(io.BytesIO(value.content), strict=True)
+        reader = PdfReader(io.BytesIO(_reader_bytes(value.content)), strict=True)
         if reader.is_encrypted and not reader.decrypt(""):
             raise ValueError("PDF requires a password")  # noqa: TRY003, TRY301
         return tuple(
             PDFPageInput(
-                document_id=value.document_id, document_sha256=digest, page_number=index, text=page.extract_text() or ""
+                document_id=value.document_id, document_sha256=digest, page_number=index, text=_page_text(page)
             )
             for index, page in enumerate(reader.pages, start=1)
         )
@@ -171,11 +266,11 @@ _FINANCIAL_CONCEPTS = (
 # without naming the statement. A title must occupy a line, not just occur in prose.
 _STATEMENTS = (
     (
-        r"cash flows?|capex|capital (?:spending|expenditures?)|depreciation|amortization|cash (?:used|provided)|ebitda",
+        r"cash flows?|capex|capital (?:spending|expenditures?)|depreciation|amortization|cash (?:used|provided|generat\w*)|investment in fixed assets|ebitda",
         r"statements? of cash flows?",
     ),
     (
-        r"ebitda|income statement|p\s*&\s*l|earnings|profit|net income|revenue|gross margin|per share",
+        r"ebitda|income statement|p\s*&\s*l|earnings|profit|(?:net|operating) (?:income|loss)|revenue|gross margin|per share",
         r"statements? of (?:income|earnings|operations|profit (?:and|or) loss)",
     ),
     (
@@ -254,17 +349,27 @@ def _lexical_pages(
     question: str,
 ) -> list[str]:
     """Give rare question terms a route into the pool even when FTS admission drops a page."""
-    wanted = set(_retrieval_terms(question))
+    query_terms = _retrieval_terms(question)
+    wanted = set(query_terms)
+    pairs = set(pairwise(query_terms))
+    headings = {}
+    phrases = {}
     counts = {}
     frequency: Counter[str] = Counter()
     for key in records:
         body, heading = terms(key)
-        matches = Counter(word for word in (*body, *heading) if word in wanted)
+        matches = Counter(word for word in body if word in wanted)
+        headings[key] = wanted.intersection(heading)
+        phrases[key] = pairs.intersection(pairwise(body))
         frequency.update(matches.keys())
         counts[key] = matches
     idf = {word: math.log1p((len(records) - df + 0.5) / (df + 0.5)) for word, df in frequency.items()}
     scores = {
-        key: sum(idf[word] * count / (count + 1.2) for word, count in matches.items())
+        key: (
+            sum(idf[word] * count / (count + 1.2) for word, count in matches.items())
+            + sum(idf[word] for word in headings[key] if word in idf)
+            + sum(min(idf[a], idf[b]) for a, b in phrases[key])
+        )
         for key, matches in counts.items()
         if matches
     }
@@ -374,7 +479,7 @@ async def search_pdf_pages(
     )
     preferred.sort(key=lambda item: (-score(item), item))
     ordered = list(dict.fromkeys([*preferred[: limit // 2], *sorted(hits, key=lambda item: (-score(item), item))]))
-    lexical = _lexical_pages(by_id, page_terms, normalized)[: limit // 5]
+    lexical = _lexical_pages(by_id, page_terms, normalized)[: limit // 2]
     statements = _statement_pages(records, normalized)
     ordered = list(dict.fromkeys([*statements, *ordered[: max(1, limit // 4)], *lexical, *ordered]))
     neighbors = await _continuations(memory, page_sources, by_id, ordered[: min(6, limit // 2)], limit)

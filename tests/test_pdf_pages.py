@@ -19,8 +19,8 @@ import hashlib
 import io
 
 import pytest
-from pypdf import PdfWriter
-from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import ArrayObject, DecodedStreamObject, DictionaryObject, NameObject, NumberObject, RectangleObject
 
 from powercontext.sources import SourceDefinitionRegistry, SourceMaterialization, TextEvidence
 from powercontext.sources.pdf_pages import (
@@ -32,12 +32,12 @@ from powercontext.sources.pdf_pages import (
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY
 
 
-def make_pdf(texts, *, password=None):
+def make_pdf(texts, *, password=None, base_font="/Helvetica"):
     writer = PdfWriter()
     font = DictionaryObject({
         NameObject("/Type"): NameObject("/Font"),
         NameObject("/Subtype"): NameObject("/Type1"),
-        NameObject("/BaseFont"): NameObject("/Helvetica"),
+        NameObject("/BaseFont"): NameObject(base_font),
     })
     for text in texts:
         page = writer.add_blank_page(width=600, height=800)
@@ -75,6 +75,65 @@ def test_all_physical_pages_and_numbers_are_preserved(password):
             "document_sha256": page.document_sha256,
             "page_number": page.page_number,
         }
+
+
+def test_xref_line_break_preserves_original_digest_and_other_invalid_offsets_fail():
+    raw = make_pdf(["Sales 100"])
+    body, marker, trailer = raw.rpartition(b"startxref")
+    offset = int(trailer.split()[0])
+    for adjustment in (1, 5):
+        edited = body + marker + trailer.replace(str(offset).encode(), str(offset - adjustment).encode(), 1)
+        value = PDFDocumentInput(document_id="report", content=edited)
+        if adjustment == 1:
+            (page,) = parse_pdf_document(value)
+            assert page.text == "Sales 100"
+            assert page.document_sha256 == hashlib.sha256(edited).hexdigest()
+        else:
+            with pytest.raises(ValueError):
+                parse_pdf_document(value)
+
+
+@pytest.mark.parametrize("crop_media", [False, True])
+def test_positioned_text_respects_word_boundaries_table_values_and_page_crop(crop_media):
+    writer = PdfWriter(clone_from=PdfReader(io.BytesIO(make_pdf(["placeholder"], base_font="/Courier"))))
+    page = writer.pages[0]
+    # Each short run is its own text object; the last one is on the adjacent printed panel.
+    runs = [(10, "Ne"), (22, "t"), (34, "sa"), (46, "le"), (58, "s"), (80, "12"), (92, "34"), (120, "56")]
+    stream = DecodedStreamObject()
+    stream.set_data("\n".join(f"BT /F1 10 Tf {x} 100 Td ({word}) Tj ET" for x, word in runs).encode())
+    page[NameObject("/Contents")] = stream
+    page.cropbox = RectangleObject([0, 0, 115, 200])
+    if crop_media:
+        page.mediabox = page.cropbox
+    output = io.BytesIO()
+    writer.write(output)
+    (result,) = parse_pdf_document(PDFDocumentInput(document_id="panels", content=output.getvalue()))
+    assert result.text.split() == ["Net", "sales", "1234"]
+
+
+def test_stylistic_glyph_is_decoded_only_when_named_by_the_font():
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=200, height=100)
+    encoding = DictionaryObject({
+        NameObject("/BaseEncoding"): NameObject("/WinAnsiEncoding"),
+        NameObject("/Differences"): ArrayObject([NumberObject(ord("x")), NameObject("/t.alt")]),
+    })
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Courier"),
+        NameObject("/Encoding"): encoding,
+    })
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 10 Tf 10 50 Td (Reporx /t.alt) Tj ET BT /F1 10 Tf 10 -50 Td (printer slug) Tj ET")
+    page[NameObject("/Contents")] = stream
+    output = io.BytesIO()
+    writer.write(output)
+    (result,) = parse_pdf_document(PDFDocumentInput(document_id="glyphs", content=output.getvalue()))
+    assert result.text.strip() == "Report /t.alt"
 
 
 @pytest.mark.parametrize("raw", [b"", b"not pdf", b"%PDF-1.7\ntruncated"])
