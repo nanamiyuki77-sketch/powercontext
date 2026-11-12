@@ -260,6 +260,7 @@ from powercontext.builtin.sources import (
     ExternalSkillImportMode,
     SkillUsageCapture,
     SourceCursor,
+    SourceJournalEntry,
     validate_scope_id,
 )
 from powercontext.builtin.statistics import (
@@ -2503,6 +2504,11 @@ class ScopedMemoryApplication:
             _validate_memory_identity(context.artifacts.memory_artifact_id, current)
             _validate_expected_revision(current, expected_revision)
             return await service.compact(current, dry_run=dry_run, limit=limit, reason=reason)
+
+    async def source_journal(self) -> tuple[SourceJournalEntry, ...]:
+        """Read the scoped journal for resolving the lineage of Memory entries."""
+        async with self._runtime._context(self.scope_id) as context:
+            return await context.sources.journal.entries()
 
     async def list(self, *, include_inactive: bool = False, tag_filter: TagFilter | None = None) -> MemoryEntriesPage:
         async with self._runtime._context(self.scope_id) as context:

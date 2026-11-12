@@ -144,6 +144,7 @@ def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title
     texts = [
         f"{title}\nNet revenue 1200. Operating income 300. Net income 180.",
         "Consolidated Statements of Cash Flows\nDepreciation amortization 50. Capital expenditures 80.",
+        "2) Equipment additions 80; proceeds from disposals 12.",
         *[
             f"Note {number}. Income taxes and restructuring charges. "
             "Consolidated income tax expense. Capital spending expenditures. "
@@ -182,7 +183,7 @@ def test_statement_evidence_survives_many_partial_matching_notes(tmp_path, title
                 for citation in citations
             ]
             identities = [entry.sources[0].source_id for entry in entries]
-            assert {observations[0].name, observations[1].name} <= set(identities)
+            assert {page.name for page in observations[:3]} <= set(identities)
             assert len(identities) == len(set(identities)) <= 20
 
     asyncio.run(scenario())

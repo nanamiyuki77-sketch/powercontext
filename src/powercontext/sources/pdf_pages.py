@@ -19,8 +19,10 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import math
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Callable, Sequence
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -28,11 +30,13 @@ from pydantic import BaseModel, Field, field_validator
 
 from powercontext.sources.definitions import SourceDefinition, SourceProjection
 from powercontext.sources.models import Source, SourceMaterialization
+from powercontext.sources.observations import SourceObservation
 from powercontext.sources.projections import TEXT_EVIDENCE_PROJECTION_KEY, TextEvidence
 
 if TYPE_CHECKING:
     from powercontext.builtin.artifacts.memory.models import MemoryCitation
     from powercontext.builtin.runtime.application import ScopedMemoryApplication
+    from powercontext.builtin.runtime.models import MemoryEntryRecord
 
 
 class PDFDocumentInput(BaseModel):
@@ -163,6 +167,45 @@ _FINANCIAL_CONCEPTS = (
 )
 
 
+# Use statement titles as evidence for questions that ask for accounting inputs
+# without naming the statement. A title must occupy a line, not just occur in prose.
+_STATEMENTS = (
+    (
+        r"cash flows?|capex|capital (?:spending|expenditures?)|depreciation|amortization|cash (?:used|provided)|ebitda",
+        r"statements? of cash flows?",
+    ),
+    (
+        r"ebitda|income statement|p\s*&\s*l|earnings|profit|net income|revenue|gross margin|per share",
+        r"statements? of (?:income|earnings|operations|profit (?:and|or) loss)",
+    ),
+    (
+        r"balance sheet|assets?|liabilit\w*|working capital|current ratio|quick ratio|inventory|receivables|payables",
+        r"(?:balance sheets?|statements? of financial (?:position|condition))",
+    ),
+    (
+        r"(?:shareholders?|stockholders?)['\u2019]? equity|changes in equity|movements in .*equity",
+        r"statements? of (?:changes in )?(?:(?:shareholders?|stockholders?)['\u2019]? )?equity",
+    ),
+)
+
+
+def _statement_pages(records: Sequence[MemoryEntryRecord], question: str) -> list[str]:
+    selected = []
+    for cue, title in _STATEMENTS:
+        if not re.search(cue, question):
+            continue
+        pattern = re.compile(r"^(?:consolidated |combined |condensed )*" + title + r"(?: \(continued\))?[.:]?$", re.I)
+        matches = []
+        for record in records:
+            body = record.entry.text.partition("\n")[2]
+            if any(pattern.fullmatch(line.strip()) for line in body.splitlines()[:10]):
+                # Numerical statements have consecutive comparative figures and independently readable line items.
+                rows = sum(bool(re.search(r"\d[\d,.]*\s+[$(]?\d", line)) for line in body.splitlines())
+                matches.append((rows, record.entry.entry_version_id))
+        selected.extend(identifier for _, identifier in sorted(matches, reverse=True)[:2])
+    return selected
+
+
 def _retrieval_terms(text: str) -> tuple[str, ...]:
     from powercontext.builtin.artifacts.search import analyze_fts_query
 
@@ -205,6 +248,29 @@ def _page_relevance(body: tuple[str, ...], heading: tuple[str, ...], query: str)
     return coverage + 2 * exact + 5 * title
 
 
+def _lexical_pages(
+    records: dict[str, MemoryEntryRecord],
+    terms: Callable[[str], tuple[tuple[str, ...], tuple[str, ...]]],
+    question: str,
+) -> list[str]:
+    """Give rare question terms a route into the pool even when FTS admission drops a page."""
+    wanted = set(_retrieval_terms(question))
+    counts = {}
+    frequency: Counter[str] = Counter()
+    for key in records:
+        body, heading = terms(key)
+        matches = Counter(word for word in (*body, *heading) if word in wanted)
+        frequency.update(matches.keys())
+        counts[key] = matches
+    idf = {word: math.log1p((len(records) - df + 0.5) / (df + 0.5)) for word, df in frequency.items()}
+    scores = {
+        key: sum(idf[word] * count / (count + 1.2) for word, count in matches.items())
+        for key, matches in counts.items()
+        if matches
+    }
+    return sorted(scores, key=lambda key: (-scores[key], key))
+
+
 def _named_reports(document_ids: set[str], question: str) -> set[str]:
     # Report identifiers commonly join issuer words and append a fiscal year and filing type.
     ignored = {"inc", "corp", "corporation", "company", "form", "annual", "report", "fy", "10k", "10q", "k", "q"}
@@ -219,7 +285,7 @@ def _named_reports(document_ids: set[str], question: str) -> set[str]:
     return named
 
 
-async def _page_pool(memory: ScopedMemoryApplication, normalized: str) -> tuple[dict[str, str], set[str], int]:
+async def _page_pool(memory: ScopedMemoryApplication, normalized: str):
     entries = (await memory.list()).entries
     page_sources = {}
     documents = set()
@@ -230,7 +296,13 @@ async def _page_pool(memory: ScopedMemoryApplication, normalized: str) -> tuple[
             documents.add(record.entry.text.partition("\n")[0])
     named = _named_reports(documents, normalized)
     restrict = bool(named and named != documents)
-    return page_sources, named if restrict else set(), len(entries) if restrict else 0
+    records = [
+        record
+        for record in entries
+        if record.entry.entry_version_id in page_sources
+        and (not restrict or record.entry.text.partition("\n")[0] in named)
+    ]
+    return page_sources, named if restrict else set(), len(entries) if restrict else 0, records
 
 
 async def search_pdf_pages(
@@ -239,7 +311,7 @@ async def search_pdf_pages(
     limit: int = 10,
 ) -> tuple[MemoryCitation, ...]:
     """Fuse bounded lexical searches and return distinct, real page citations."""
-    from powercontext.builtin.artifacts.memory.models import MemoryCitation, MemoryHit
+    from powercontext.builtin.artifacts.memory.models import MemoryHit
     from powercontext.builtin.runtime.models import SearchMemoryRequest
 
     if limit <= 0 or not question.strip():
@@ -252,14 +324,15 @@ async def search_pdf_pages(
 
     @cache
     def page_terms(identifier: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-        body = hits[identifier].text.partition("\n")[2]
+        body = by_id[identifier].entry.text.partition("\n")[2]
         return _retrieval_terms(body), _retrieval_terms(" ".join(body.split()[:40]))
 
     def relevance(identifier: str, query: str) -> float:
         body, heading = page_terms(identifier)
         return _page_relevance(body, heading, query)
 
-    page_sources, named, report_depth = await _page_pool(memory, normalized)
+    page_sources, named, report_depth, records = await _page_pool(memory, normalized)
+    by_id = {record.entry.entry_version_id: record for record in records}
     depth = max(100, limit * 5, report_depth)
     for query in queries:
         page = await memory.search(SearchMemoryRequest(query=query, mode="fts", limit=depth))
@@ -301,16 +374,50 @@ async def search_pdf_pages(
     )
     preferred.sort(key=lambda item: (-score(item), item))
     ordered = list(dict.fromkeys([*preferred[: limit // 2], *sorted(hits, key=lambda item: (-score(item), item))]))
+    lexical = _lexical_pages(by_id, page_terms, normalized)[: limit // 5]
+    statements = _statement_pages(records, normalized)
+    ordered = list(dict.fromkeys([*statements, *ordered[: max(1, limit // 4)], *lexical, *ordered]))
+    neighbors = await _continuations(memory, page_sources, by_id, ordered[: min(6, limit // 2)], limit)
+    ordered = list(dict.fromkeys([*ordered[: limit // 2], *neighbors[: limit // 4], *ordered]))
     for identifier in ordered:
-        hit = hits[identifier]
-        citation = MemoryCitation(
-            memory_ref=hit.memory_ref, entry_id=hit.entry_id, entry_version_id=hit.entry_version_id
-        )
         source_id = page_sources[identifier]
         if source_id in seen:
             continue
         seen.add(source_id)
-        citations.append(citation)
+        citations.append(by_id[identifier].citation)
         if len(citations) == limit:
             break
     return tuple(citations)
+
+
+async def _continuations(
+    memory: ScopedMemoryApplication,
+    page_sources: dict[str, str],
+    by_id: dict[str, MemoryEntryRecord],
+    anchors: list[str],
+    limit: int,
+) -> list[str]:
+    """Include the adjacent physical page only when its text continues the evidence."""
+    if limit < 5 or not anchors:
+        return []
+    location = {}
+    for entry in await memory.source_journal():
+        if entry.source_ref.source_type == "pdf-page" and isinstance(entry.source, SourceObservation):
+            page = PDFPageInput.model_validate(entry.source.payload)
+            location[entry.source_ref.source_id] = (page.document_id, page.document_sha256, page.page_number)
+    pages = {location[src]: key for key, src in page_sources.items() if src in location and key in by_id}
+    results = []
+    for key in anchors:
+        pos = location.get(page_sources[key])
+        if pos is None:
+            continue
+        doc, digest, number = pos
+        for offset in (1, -1):
+            neighbor = pages.get((doc, digest, number + offset))
+            if neighbor is None:
+                continue
+            later = by_id[neighbor if offset == 1 else key].entry.text.partition("\n")[2]
+            lead = re.sub(r"^\s*Table of Contents\s*", "", later, flags=re.I).lstrip()
+            if re.match(r"(?:[a-z]|\d+[.)]\s)", lead) or "(continued)" in lead[:120].lower():
+                results.append(neighbor)
+    return results
