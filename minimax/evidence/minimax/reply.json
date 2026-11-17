@@ -1,0 +1,17 @@
+{
+  "id": "074b58d4cd7f2d69bf310a74571424fc",
+  "model": "MiniMax-M3.1-Flash",
+  "usage": {
+    "input_tokens": 1236,
+    "output_tokens": 105,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 128,
+    "output_tokens_details": {
+      "thinking_tokens": 43
+    }
+  },
+  "stop_reason": "end_turn",
+  "command": "mmx text chat --model MiniMax-M3.1-Flash --messages-file messages.json --output json",
+  "cli": "mmx 1.0.29",
+  "text": "def open_loans(rows, today, *, overdue_only=False):\n    \"\"\"Return open loan identifiers in register order.\"\"\"\n    return [\n        row[\"id\"]\n        for row in rows\n        if not row[\"returned\"] and (not overdue_only or row[\"due\"] < today)\n    ]"
+}

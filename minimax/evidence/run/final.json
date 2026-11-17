@@ -1,0 +1,86 @@
+{
+  "task": {
+    "id": "loan-due-date",
+    "question": "Fix the overdue date boundary in open_loans for loans. Preserve the default listing and order."
+  },
+  "database": [
+    "5.7.25-OceanBase seekdb-v1.4.0.0",
+    "OceanBase 4.3.5.3 seekdb (r1.4.0.0) (Built 1-5bce9e06d1281347ad61344e4b01fab9158c58a2 Nov  2 2026)"
+  ],
+  "sql": "SELECT path, sha, body FROM sdd_sources WHERE run_id=%s AND topic IN %s ORDER BY path",
+  "parameters": [
+    "6d8e610445b3a267be3c70c4389ead24f263c2b88947fc0b4e06679ff9da08d1",
+    [
+      "and",
+      "boundary",
+      "date",
+      "default",
+      "fix",
+      "for",
+      "in",
+      "listing",
+      "loans",
+      "open_loans",
+      "order",
+      "overdue",
+      "preserve",
+      "the"
+    ]
+  ],
+  "sources": [
+    {
+      "path": "loans/catalog.py",
+      "sha256": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+      "content": "def open_loans(rows, today, *, overdue_only=False):\n    \"\"\"Return open loan identifiers in register order.\"\"\"\n    return [\n        row[\"id\"]\n        for row in rows\n        if not row[\"returned\"] and (not overdue_only or row[\"due\"] < today)\n    ]\n"
+    },
+    {
+      "path": "loans/spec.md",
+      "sha256": "8f5422827dea9cf98ccee58c16cf41a9428b38a55a904cc6755bd65caba25411",
+      "content": "# LOAN-1 Open loans\nExclude returned loans, retaining the input order and identifiers. Empty input returns an empty list.\n\n# LOAN-2 Overdue loans\nIn overdue-only mode, include an open loan only when its due date is strictly earlier than the supplied business date. A loan is still on time on its due date. Dates are ISO YYYY-MM-DD.\n"
+    },
+    {
+      "path": "loans/test_catalog.py",
+      "sha256": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e",
+      "content": "import unittest\n\nfrom catalog import open_loans\n\n\nROWS = [\n    {\"id\": \"B\", \"due\": \"2026-04-09\", \"returned\": False},\n    {\"id\": \"A\", \"due\": \"2026-04-10\", \"returned\": False},\n    {\"id\": \"D\", \"due\": \"2026-04-08\", \"returned\": True},\n    {\"id\": \"C\", \"due\": \"2026-04-11\", \"returned\": False},\n]\nTODAY = \"2026-04-10\"\n\n\nclass Target(unittest.TestCase):\n    def test_due_today_is_still_on_time(self):\n        self.assertEqual(open_loans(ROWS, TODAY, overdue_only=True), [\"B\"])\n\n\nclass Regression(unittest.TestCase):\n    def test_default_preserves_open_register_order(self):\n        self.assertEqual(open_loans(ROWS, TODAY), [\"B\", \"A\", \"C\"])\n\n    def test_empty_register(self):\n        self.assertEqual(open_loans([], TODAY, overdue_only=True), [])\n"
+    }
+  ],
+  "progress": {
+    "position": 2,
+    "ref": {
+      "source_type": "content",
+      "source_id": "8a09b0b657a6d01b3579879800ad740247255540e367cd732f69a6b3af3931c6"
+    },
+    "checks": [
+      {
+        "command": "python -B -m unittest -v test_catalog.Target",
+        "exit": 1,
+        "source_sha256_lf": "34ccb465a8f08616c10e1fc6b45c97cf68c77a7047c177ce943d0e1cd04b8a44",
+        "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+      },
+      {
+        "command": "python -B -m unittest -v test_catalog.Regression",
+        "exit": 0,
+        "source_sha256_lf": "34ccb465a8f08616c10e1fc6b45c97cf68c77a7047c177ce943d0e1cd04b8a44",
+        "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+      },
+      {
+        "command": "python -B -m unittest -v test_catalog.Target",
+        "exit": 0,
+        "source_sha256_lf": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+        "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+      },
+      {
+        "command": "python -B -m unittest -v test_catalog.Regression",
+        "exit": 0,
+        "source_sha256_lf": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+        "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+      }
+    ],
+    "done": [
+      "baseline tested",
+      "boundary fixed",
+      "regression tested"
+    ],
+    "todo": []
+  }
+}

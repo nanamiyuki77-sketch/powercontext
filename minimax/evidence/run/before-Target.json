@@ -1,0 +1,8 @@
+{
+  "command": "python -B -m unittest -v test_catalog.Target",
+  "cwd": "project/loans",
+  "exit": 1,
+  "source_sha256_lf": "34ccb465a8f08616c10e1fc6b45c97cf68c77a7047c177ce943d0e1cd04b8a44",
+  "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e",
+  "output": "test_due_today_is_still_on_time (test_catalog.Target.test_due_today_is_still_on_time) ... FAIL\n\n======================================================================\nFAIL: test_due_today_is_still_on_time (test_catalog.Target.test_due_today_is_still_on_time)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"C:\\Users\\Lenovo\\powercontext-obMiniMax\\minimax\\.run\\session\\project\\loans\\test_catalog.py\", line 17, in test_due_today_is_still_on_time\n    self.assertEqual(open_loans(ROWS, TODAY, overdue_only=True), [\"B\"])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Lists differ: ['B', 'A'] != ['B']\n\nFirst list contains 1 additional elements.\nFirst extra element 1:\n'A'\n\n- ['B', 'A']\n+ ['B']\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)\n"
+}

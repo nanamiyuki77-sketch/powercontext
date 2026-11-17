@@ -1,0 +1,34 @@
+{
+  "done": [
+    "baseline tested",
+    "boundary fixed",
+    "regression tested"
+  ],
+  "todo": [],
+  "checks": [
+    {
+      "command": "python -B -m unittest -v test_catalog.Target",
+      "exit": 1,
+      "source_sha256_lf": "34ccb465a8f08616c10e1fc6b45c97cf68c77a7047c177ce943d0e1cd04b8a44",
+      "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+    },
+    {
+      "command": "python -B -m unittest -v test_catalog.Regression",
+      "exit": 0,
+      "source_sha256_lf": "34ccb465a8f08616c10e1fc6b45c97cf68c77a7047c177ce943d0e1cd04b8a44",
+      "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+    },
+    {
+      "command": "python -B -m unittest -v test_catalog.Target",
+      "exit": 0,
+      "source_sha256_lf": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+      "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+    },
+    {
+      "command": "python -B -m unittest -v test_catalog.Regression",
+      "exit": 0,
+      "source_sha256_lf": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+      "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e"
+    }
+  ]
+}

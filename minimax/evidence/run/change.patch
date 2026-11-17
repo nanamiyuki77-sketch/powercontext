@@ -1,0 +1,9 @@
+--- a/loans/catalog.py
++++ b/loans/catalog.py
+@@ -3,5 +3,5 @@
+     return [
+         row["id"]
+         for row in rows
+-        if not row["returned"] and (not overdue_only or row["due"] <= today)
++        if not row["returned"] and (not overdue_only or row["due"] < today)
+     ]

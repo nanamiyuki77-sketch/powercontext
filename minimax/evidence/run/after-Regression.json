@@ -1,0 +1,8 @@
+{
+  "command": "python -B -m unittest -v test_catalog.Regression",
+  "cwd": "project/loans",
+  "exit": 0,
+  "source_sha256_lf": "4eeff6027357820e092262534c5eef53bc5ce81ba3cd8038d972f2098901af07",
+  "tests_sha256_lf": "a7ea4ea7268434808b7240723aae9e12ff413c2bc518b134058f587ea2d6442e",
+  "output": "test_default_preserves_open_register_order (test_catalog.Regression.test_default_preserves_open_register_order) ... ok\ntest_empty_register (test_catalog.Regression.test_empty_register) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n"
+}
