@@ -1,0 +1,1236 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+  "documents": 12,
+  "queries": 8,
+  "report": [
+    {
+      "dtype": "fp32",
+      "device": "wasm",
+      "batch": 1,
+      "bytes": 91100283,
+      "loadMs": 2522.899999976158,
+      "docPerSecond": 33.71733634398231,
+      "dbWriteMs": 370.74439999996684,
+      "writeMs": 939.2000000476837,
+      "dbRefreshMs": 304.1976999999897,
+      "firstQueryMs": 39.5,
+      "queryEmbeddingMs": 16.199999928474426,
+      "dbSearchMs": 9.800299999973504,
+      "queryMs": 30.5,
+      "recallAt5": 1,
+      "ndcgAt5": 0.9538662191964322,
+      "repeats": [
+        {
+          "embeddingMs": 420.89999997615814,
+          "dbMs": 413.31689999997616,
+          "refreshMs": 304.1976999999897,
+          "writeMs": 939.2000000476837,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 22.975299999990966,
+            "embeddingMs": 17.799999952316284,
+            "elapsedMs": 44.5
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 9.600000023841858,
+              "dbMs": 7.801399999996647,
+              "elapsedMs": 20.700000047683716
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 11.600000023841858,
+              "dbMs": 9.846600000018952,
+              "elapsedMs": 28.899999976158142
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 23.399999976158142,
+              "dbMs": 9.782100000011269,
+              "elapsedMs": 37.5
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 15.799999952316284,
+              "dbMs": 8.75099999998929,
+              "elapsedMs": 28.59999990463257
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 7.5,
+              "dbMs": 8.414300000004005,
+              "elapsedMs": 19.600000023841858
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 18.399999976158142,
+              "dbMs": 8.910800000012387,
+              "elapsedMs": 30.399999976158142
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 14.700000047683716,
+              "dbMs": 6.798899999994319,
+              "elapsedMs": 24.700000047683716
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 13.699999928474426,
+              "dbMs": 9.874800000019604,
+              "elapsedMs": 26.799999952316284
+            }
+          ]
+        },
+        {
+          "embeddingMs": 335.39999997615814,
+          "dbMs": 338.6333999999915,
+          "refreshMs": 303.63670000000275,
+          "writeMs": 777.7999999523163,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 17.45930000001681,
+            "embeddingMs": 14,
+            "elapsedMs": 35.40000009536743
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 19.299999952316284,
+              "dbMs": 11.132400000002235,
+              "elapsedMs": 35.299999952316284
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 14.600000023841858,
+              "dbMs": 6.694099999993341,
+              "elapsedMs": 25.600000023841858
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 16.199999928474426,
+              "dbMs": 11.112499999988358,
+              "elapsedMs": 30.299999952316284
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 23.399999976158142,
+              "dbMs": 7.291099999973085,
+              "elapsedMs": 34.700000047683716
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 11.899999976158142,
+              "dbMs": 10.323299999989104,
+              "elapsedMs": 28.899999976158142
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 15.199999928474426,
+              "dbMs": 10.624400000000605,
+              "elapsedMs": 32.39999997615814
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 15.799999952316284,
+              "dbMs": 10.506799999973737,
+              "elapsedMs": 32.199999928474426
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 16.5,
+              "dbMs": 9.800299999973504,
+              "elapsedMs": 30.5
+            }
+          ]
+        },
+        {
+          "embeddingMs": 355.89999985694885,
+          "dbMs": 370.74439999996684,
+          "refreshMs": 403.3404000000155,
+          "writeMs": 962.3000003099442,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 21.67829999999958,
+            "embeddingMs": 13.199999928474426,
+            "elapsedMs": 39.5
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 20.899999976158142,
+              "dbMs": 9.794900000008056,
+              "elapsedMs": 35.59999990463257
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 9.899999976158142,
+              "dbMs": 10.113500000006752,
+              "elapsedMs": 24
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 18.100000023841858,
+              "dbMs": 12.291499999992084,
+              "elapsedMs": 35.5
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 24.100000023841858,
+              "dbMs": 7.162200000020675,
+              "elapsedMs": 35.60000002384186
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 15.100000023841858,
+              "dbMs": 5.000399999989895,
+              "elapsedMs": 24
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 21.799999952316284,
+              "dbMs": 8.375800000008894,
+              "elapsedMs": 36
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 22.399999976158142,
+              "dbMs": 12.826700000005076,
+              "elapsedMs": 41.10000002384186
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 19.699999928474426,
+              "dbMs": 13.071300000010524,
+              "elapsedMs": 38.299999952316284
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dtype": "q8",
+      "device": "wasm",
+      "batch": 1,
+      "bytes": 23685047,
+      "loadMs": 239.5,
+      "docPerSecond": 47.92332271108421,
+      "dbWriteMs": 341.27619999999297,
+      "writeMs": 927.200000166893,
+      "dbRefreshMs": 403.61819999999716,
+      "firstQueryMs": 42.199999928474426,
+      "queryEmbeddingMs": 12.600000023841858,
+      "dbSearchMs": 7.784500000008848,
+      "queryMs": 24.700000047683716,
+      "recallAt5": 1,
+      "ndcgAt5": 0.9538662191964322,
+      "repeats": [
+        {
+          "embeddingMs": 232.29999995231628,
+          "dbMs": 339.77760000003036,
+          "refreshMs": 403.75969999999506,
+          "writeMs": 927.5000002384186,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 23.129899999999907,
+            "embeddingMs": 14.199999928474426,
+            "elapsedMs": 42.199999928474426
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 11,
+              "dbMs": 6.619600000005448,
+              "elapsedMs": 20.300000071525574
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 5.599999904632568,
+              "dbMs": 5.945100000011735,
+              "elapsedMs": 14.5
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 8.299999952316284,
+              "dbMs": 5.60899999999674,
+              "elapsedMs": 16.399999976158142
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 8,
+              "dbMs": 6.090599999995902,
+              "elapsedMs": 17
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 11.5,
+              "dbMs": 6.783800000004703,
+              "elapsedMs": 22
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 9.399999976158142,
+              "dbMs": 5.524099999980535,
+              "elapsedMs": 17.899999976158142
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 9.700000047683716,
+              "dbMs": 4.966000000014901,
+              "elapsedMs": 17.799999952316284
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 9.100000023841858,
+              "dbMs": 6.245499999989988,
+              "elapsedMs": 19.100000023841858
+            }
+          ]
+        },
+        {
+          "embeddingMs": 267.89999997615814,
+          "dbMs": 341.27619999999297,
+          "refreshMs": 303.1626999999862,
+          "writeMs": 786.6000000238419,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 20.78740000000107,
+            "embeddingMs": 11.899999976158142,
+            "elapsedMs": 36.200000047683716
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 10.699999928474426,
+              "dbMs": 6.595100000005914,
+              "elapsedMs": 21
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 5.799999952316284,
+              "dbMs": 6.837400000018533,
+              "elapsedMs": 16.199999928474426
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 14.600000023841858,
+              "dbMs": 6.675699999992503,
+              "elapsedMs": 24.700000047683716
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 14.799999952316284,
+              "dbMs": 10.171999999991385,
+              "elapsedMs": 29.399999976158142
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 12.600000023841858,
+              "dbMs": 8.58609999998589,
+              "elapsedMs": 27.5
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 19.399999976158142,
+              "dbMs": 9.768400000000838,
+              "elapsedMs": 34.39999997615814
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 25.399999976158142,
+              "dbMs": 17.49159999997937,
+              "elapsedMs": 50
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 23.199999928474426,
+              "dbMs": 10.880000000004657,
+              "elapsedMs": 38.39999997615814
+            }
+          ]
+        },
+        {
+          "embeddingMs": 250.39999985694885,
+          "dbMs": 348.3544999999576,
+          "refreshMs": 403.61819999999716,
+          "writeMs": 927.200000166893,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 19.987999999983003,
+            "embeddingMs": 18.59999990463257,
+            "elapsedMs": 42.89999997615814
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 15.5,
+              "dbMs": 14.048399999999674,
+              "elapsedMs": 35.09999990463257
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 9.399999976158142,
+              "dbMs": 7.784500000008848,
+              "elapsedMs": 22.899999976158142
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 17.700000047683716,
+              "dbMs": 8.018099999986589,
+              "elapsedMs": 30.100000023841858
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 15.600000023841858,
+              "dbMs": 8.83520000000135,
+              "elapsedMs": 28.600000023841858
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 10.5,
+              "dbMs": 6.995499999989988,
+              "elapsedMs": 21
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 14.100000023841858,
+              "dbMs": 7.949300000007497,
+              "elapsedMs": 25.200000047683716
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 16.5,
+              "dbMs": 9.981800000008661,
+              "elapsedMs": 29.699999928474426
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 14.300000071525574,
+              "dbMs": 10.62609999999404,
+              "elapsedMs": 29.700000047683716
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dtype": "q8",
+      "device": "wasm",
+      "batch": 8,
+      "bytes": 23685047,
+      "loadMs": 244,
+      "docPerSecond": 45.66210044419327,
+      "dbWriteMs": 456.20819999996456,
+      "writeMs": 917.5,
+      "dbRefreshMs": 303.1067000000039,
+      "firstQueryMs": 35.89999997615814,
+      "queryEmbeddingMs": 13.199999928474426,
+      "dbSearchMs": 8.3186000000278,
+      "queryMs": 25.200000047683716,
+      "recallAt5": 1,
+      "ndcgAt5": 0.9538662191964322,
+      "repeats": [
+        {
+          "embeddingMs": 262.8000000715256,
+          "dbMs": 456.20819999996456,
+          "refreshMs": 402.78740000000107,
+          "writeMs": 945.4999998807907,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 18.400199999974575,
+            "embeddingMs": 11.300000071525574,
+            "elapsedMs": 32.700000047683716
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 13.200000047683716,
+              "dbMs": 9.5793999999878,
+              "elapsedMs": 26.700000047683716
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 6.699999928474426,
+              "dbMs": 6.489700000005541,
+              "elapsedMs": 15.699999928474426
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 8.800000071525574,
+              "dbMs": 5.592100000008941,
+              "elapsedMs": 17.300000071525574
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 8,
+              "dbMs": 8.20539999997709,
+              "elapsedMs": 19.799999952316284
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 9.899999976158142,
+              "dbMs": 5.658699999999953,
+              "elapsedMs": 18.600000023841858
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 9.899999976158142,
+              "dbMs": 10.219700000016019,
+              "elapsedMs": 25.299999952316284
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 11.600000023841858,
+              "dbMs": 8.556400000001304,
+              "elapsedMs": 23.800000071525574
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 13.199999928474426,
+              "dbMs": 6.070700000011129,
+              "elapsedMs": 22.299999952316284
+            }
+          ]
+        },
+        {
+          "embeddingMs": 258.5,
+          "dbMs": 362.44020000004093,
+          "refreshMs": 302.42110000000685,
+          "writeMs": 749.3999999761581,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 22.985899999999674,
+            "embeddingMs": 9.700000047683716,
+            "elapsedMs": 35.89999997615814
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 9.300000071525574,
+              "dbMs": 5.551800000015646,
+              "elapsedMs": 17.899999976158142
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 7.399999976158142,
+              "dbMs": 7.332699999999022,
+              "elapsedMs": 18.800000071525574
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 13,
+              "dbMs": 4.89770000000135,
+              "elapsedMs": 21
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 16,
+              "dbMs": 8.3186000000278,
+              "elapsedMs": 28.399999976158142
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 9.099999904632568,
+              "dbMs": 6.903400000010151,
+              "elapsedMs": 18.799999952316284
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 15.200000047683716,
+              "dbMs": 5.725799999985611,
+              "elapsedMs": 24.700000047683716
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 11.099999904632568,
+              "dbMs": 7.339799999987008,
+              "elapsedMs": 22.5
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 13.599999904632568,
+              "dbMs": 9.103000000002794,
+              "elapsedMs": 26.5
+            }
+          ]
+        },
+        {
+          "embeddingMs": 270.90000009536743,
+          "dbMs": 541.8441999999923,
+          "refreshMs": 303.1067000000039,
+          "writeMs": 917.5,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "session",
+                "text": "Choose a different collection to switch knowledge bases and isolate results between sessions.",
+                "source": "session.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              }
+            ],
+            "dbMs": 42.52079999999842,
+            "embeddingMs": 25.699999928474426,
+            "elapsedMs": 77.29999995231628
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 13.399999976158142,
+              "dbMs": 11.862499999988358,
+              "elapsedMs": 30.699999928474426
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 15.700000047683716,
+              "dbMs": 5.551800000015646,
+              "elapsedMs": 25.200000047683716
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 14.5,
+              "dbMs": 8.828100000013364,
+              "elapsedMs": 28.899999976158142
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 1,
+              "embeddingMs": 15.399999976158142,
+              "dbMs": 10.275499999988824,
+              "elapsedMs": 31.800000071525574
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 10.599999904632568,
+              "dbMs": 10.300300000002608,
+              "elapsedMs": 27
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 15.099999904632568,
+              "dbMs": 11.876799999998184,
+              "elapsedMs": 33
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 2,
+              "embeddingMs": 19.5,
+              "dbMs": 11.523099999991246,
+              "elapsedMs": 37.59999990463257
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 18.100000023841858,
+              "dbMs": 11.89859999998589,
+              "elapsedMs": 35.800000071525574
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dtype": "q8",
+      "device": "webgpu",
+      "batch": 8,
+      "bytes": 23685047,
+      "loadMs": 1462.7999999523163,
+      "docPerSecond": 15.676028739386021,
+      "dbWriteMs": 439.75110000002314,
+      "writeMs": 929.5,
+      "dbRefreshMs": 302.4377000000095,
+      "firstQueryMs": 267.10000002384186,
+      "queryEmbeddingMs": 173,
+      "dbSearchMs": 12.219699999986915,
+      "queryMs": 198.70000004768372,
+      "recallAt5": 1,
+      "ndcgAt5": 0.8913662191964322,
+      "repeats": [
+        {
+          "embeddingMs": 1291.8000000715256,
+          "dbMs": 592.4987000000256,
+          "refreshMs": 302.4377000000095,
+          "writeMs": 986,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              },
+              {
+                "id": "coffee",
+                "text": "To make cold brew coffee, steep coarse grounds in cold water overnight and filter the liquid.",
+                "source": "coffee.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              }
+            ],
+            "dbMs": 36.421300000016345,
+            "embeddingMs": 225.19999992847443,
+            "elapsedMs": 267.10000002384186
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 159.30000007152557,
+              "dbMs": 13.320000000006985,
+              "elapsedMs": 179
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 327.2000000476837,
+              "dbMs": 11.380300000018906,
+              "elapsedMs": 345
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 170.20000004768372,
+              "dbMs": 10.76500000001397,
+              "elapsedMs": 185.90000009536743
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 2,
+              "embeddingMs": 143.09999990463257,
+              "dbMs": 8.91250000000582,
+              "elapsedMs": 155.29999995231628
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 130.19999992847443,
+              "dbMs": 7.818900000012945,
+              "elapsedMs": 141.5
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 136.10000002384186,
+              "dbMs": 9.748300000006566,
+              "elapsedMs": 149
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 3,
+              "embeddingMs": 129,
+              "dbMs": 5.8245999999926426,
+              "elapsedMs": 137.79999995231628
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 146.10000002384186,
+              "dbMs": 14.014100000000326,
+              "elapsedMs": 163.89999997615814
+            }
+          ]
+        },
+        {
+          "embeddingMs": 609.1000000238419,
+          "dbMs": 431.0259000000078,
+          "refreshMs": 403.7693999999901,
+          "writeMs": 929.5,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              },
+              {
+                "id": "coffee",
+                "text": "To make cold brew coffee, steep coarse grounds in cold water overnight and filter the liquid.",
+                "source": "coffee.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              }
+            ],
+            "dbMs": 64.61779999997816,
+            "embeddingMs": 185.89999997615814,
+            "elapsedMs": 260.60000002384186
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 157.19999992847443,
+              "dbMs": 12.219699999986915,
+              "elapsedMs": 174.39999997615814
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 157.60000002384186,
+              "dbMs": 37.30319999999483,
+              "elapsedMs": 211.20000004768372
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 206.29999995231628,
+              "dbMs": 12.087100000004284,
+              "elapsedMs": 225.59999990463257
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 2,
+              "embeddingMs": 163.90000009536743,
+              "dbMs": 10.611499999999069,
+              "elapsedMs": 180.80000007152557
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 161.39999997615814,
+              "dbMs": 11.082399999984773,
+              "elapsedMs": 178.89999997615814
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 173,
+              "dbMs": 11.403400000010151,
+              "elapsedMs": 189.20000004768372
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 3,
+              "embeddingMs": 194.29999995231628,
+              "dbMs": 17.45319999998901,
+              "elapsedMs": 221.89999997615814
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 177.89999997615814,
+              "dbMs": 15.764100000000326,
+              "elapsedMs": 202
+            }
+          ]
+        },
+        {
+          "embeddingMs": 765.5,
+          "dbMs": 439.75110000002314,
+          "refreshMs": 302.1967000000004,
+          "writeMs": 822.3999999761581,
+          "first": {
+            "hits": [
+              {
+                "id": "backups",
+                "text": "Create regular database backups. To preserve data after a disk failure, save an encrypted copy on another device.",
+                "source": "backups.txt"
+              },
+              {
+                "id": "vectors",
+                "text": "Vector similarity measures semantic relatedness even when documents do not use the same words.",
+                "source": "vectors.txt"
+              },
+              {
+                "id": "plants",
+                "text": "Water a succulent only after its soil dries and place it near a bright window.",
+                "source": "plants.txt"
+              },
+              {
+                "id": "coffee",
+                "text": "To make cold brew coffee, steep coarse grounds in cold water overnight and filter the liquid.",
+                "source": "coffee.txt"
+              },
+              {
+                "id": "quantization",
+                "text": "Eight-bit weight quantization can reduce model download size and may affect accuracy.",
+                "source": "quantization.txt"
+              }
+            ],
+            "dbMs": 43.81919999999809,
+            "embeddingMs": 205.29999995231628,
+            "elapsedMs": 271.10000002384186
+          },
+          "samples": [
+            {
+              "query": "How do I preserve my data?",
+              "rank": 1,
+              "embeddingMs": 198.10000002384186,
+              "dbMs": 19.815600000001723,
+              "elapsedMs": 226.60000002384186
+            },
+            {
+              "query": "WebGPU",
+              "rank": 1,
+              "embeddingMs": 200.20000004768372,
+              "dbMs": 12.947199999995064,
+              "elapsedMs": 218.90000009536743
+            },
+            {
+              "query": "What if my browser has no GPU?",
+              "rank": 1,
+              "embeddingMs": 190.5,
+              "dbMs": 13.208099999988917,
+              "elapsedMs": 209.5
+            },
+            {
+              "query": "How to brew coffee without heating water?",
+              "rank": 2,
+              "embeddingMs": 179.30000007152557,
+              "dbMs": 15.193200000008801,
+              "elapsedMs": 201
+            },
+            {
+              "query": "full-text index",
+              "rank": 1,
+              "embeddingMs": 156.80000007152557,
+              "dbMs": 9.004799999995157,
+              "elapsedMs": 170.30000007152557
+            },
+            {
+              "query": "Make an embedding model smaller",
+              "rank": 1,
+              "embeddingMs": 209.10000002384186,
+              "dbMs": 14.217299999989336,
+              "elapsedMs": 231.39999997615814
+            },
+            {
+              "query": "How do I separate documents into different libraries?",
+              "rank": 3,
+              "embeddingMs": 198.89999997615814,
+              "dbMs": 9.809299999993527,
+              "elapsedMs": 213.29999995231628
+            },
+            {
+              "query": "What care does a succulent need?",
+              "rank": 1,
+              "embeddingMs": 175.70000004768372,
+              "dbMs": 14.133600000001024,
+              "elapsedMs": 198.70000004768372
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "browserVersion": "157.0.4341.46"
+}

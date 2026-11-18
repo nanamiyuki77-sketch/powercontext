@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>端侧文本知识库</title></head>
+<body>
+<main>
+<header><h1>端侧文本知识库</h1><p>浏览器生成向量 · seekdb 混合检索</p></header>
+<section>
+<label for="library">知识库</label>
+<input id="library" value="personal" pattern="[a-z][a-z0-9_]{2,46}" maxlength="47" required>
+<small>小写字母开头，可包含数字和下划线，3–47 字符。</small>
+<label for="files">导入 UTF-8 文本</label>
+<input id="files" type="file" accept=".txt,.md,text/plain,text/markdown" multiple>
+<div class="actions"><button id="import">导入文件</button><button id="sample" class="secondary">导入示例</button></div>
+</section>
+<section>
+<form id="search"><label for="query">搜索</label><div class="actions">
+<input id="query" placeholder="例如：How do I preserve my data?" maxlength="256" required>
+<button>检索</button></div></form>
+</section>
+<p id="backend">推理后端：尚未加载</p>
+<p id="status" role="status"></p>
+<ol id="results" aria-label="检索结果"></ol>
+</main>
+<script type="module" src="/src/main.js"></script>
+</body></html>

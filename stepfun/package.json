@@ -1,0 +1,22 @@
+{
+  "name": "stepfun-local-knowledge-base",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
+    "models": "node fetch-model.mjs",
+    "benchmark": "node browser-check.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "seekdb": "1.4.0",
+    "vite": "7.3.1"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}
