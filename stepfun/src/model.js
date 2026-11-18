@@ -5,6 +5,7 @@ env.allowLocalModels = true;
 env.allowRemoteModels = false;
 env.localModelPath = '/models/';
 env.backends.onnx.wasm.numThreads = 1;
+env.backends.onnx.wasm.wasmPaths = new URL('/ort/', location.origin).href;
 
 export async function loadModel({ dtype = 'q8', forceWasm = false, progress } = {}) {
   const start = performance.now();

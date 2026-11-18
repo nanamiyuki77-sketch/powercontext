@@ -8,17 +8,17 @@ async function size(dtype) {
   const prefix = '/models/' + model + '/';
   let bytes = 0;
   for (const file of ['config.json', 'tokenizer.json', 'tokenizer_config.json', 'onnx/' + modelFiles[dtype]]) {
-    const response = await fetch(prefix + file, { method: 'HEAD' });
-    const length = Number(response.headers.get('Content-Length'));
-    if (!response.ok || !length || response.headers.get('Content-Type')?.includes('text/html'))
-      throw new Error('先运行 npm run models，并通过 npm run dev 启动。模型文件缺失：' + file);
-    bytes += length;
+    const response = await fetch(prefix + file);
+    if (!response.ok || response.headers.get('Content-Type')?.includes('text/html'))
+      throw new Error('模型文件缺失：' + file + '。先运行 npm run models，再启动或构建应用。');
+    bytes += (await response.blob()).size;
   }
   return bytes;
 }
 
 export async function benchmark() {
   const report = [];
+  const sizes = new Map();
   const runID = 'bench_' + crypto.randomUUID().replaceAll('-', '').slice(0, 12);
   const configs = [
     ['fp32', true, 1], ['q8', true, 1], ['q8', true, 8], ['q8', false, 8],
@@ -26,7 +26,8 @@ export async function benchmark() {
   for (const [index, [dtype, forceWasm, batch]] of configs.entries()) {
     const engine = await loadModel({ dtype, forceWasm });
     try {
-      const bytes = await size(dtype);
+      if (!sizes.has(dtype)) sizes.set(dtype, await size(dtype));
+      const bytes = sizes.get(dtype);
       const repeats = [];
       for (let i = 0; i < 3; i++) {
         const name = runID + '_' + index + '_' + i;

@@ -1,12 +1,18 @@
 import { defineConfig } from 'vite';
 import { SeekdbClient, Schema, FulltextIndexConfig, VectorIndexConfig } from 'seekdb';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { createReadStream } from 'node:fs';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const transformerRequire = createRequire(require.resolve('@huggingface/transformers'));
+const ortDir = dirname(transformerRequire.resolve('onnxruntime-web'));
 
 const client = new SeekdbClient(process.env.SEEKDB_HOST ? {
   host: process.env.SEEKDB_HOST, port: Number(process.env.SEEKDB_PORT || 2881),
   user: process.env.SEEKDB_USER || 'root', password: process.env.SEEKDB_PASSWORD || '',
   database: process.env.SEEKDB_DATABASE || 'test',
-} : { path: resolve('.data/seekdb'), database: 'test' });
+} : { path: resolve(process.env.SEEKDB_DATA || '.data/seekdb'), database: 'test' });
 
 const schema = new Schema({
   fulltextIndex: new FulltextIndexConfig(),
@@ -39,6 +45,12 @@ async function jsonBody(req) {
 let pending = Promise.resolve();
 
 function install(server) {
+  server.middlewares.use('/ort', (req, res, next) => {
+    const file = req.url?.slice(1);
+    if (file !== 'ort-wasm-simd-threaded.jsep.wasm' && file !== 'ort-wasm-simd-threaded.jsep.mjs') return next();
+    res.setHeader('Content-Type', file.endsWith('.wasm') ? 'application/wasm' : 'text/javascript');
+    createReadStream(resolve(ortDir, file)).on('error', error => res.destroy(error)).pipe(res);
+  });
   server.middlewares.use(async (req, res, next) => {
     if (req.url !== '/api/import' && req.url !== '/api/search') return next();
     const reply = (status, value) => {

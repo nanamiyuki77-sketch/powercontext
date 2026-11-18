@@ -50,7 +50,9 @@ try {
   await page.goto(base + '/bench.html');
   await page.locator('#run').click();
   await page.waitForFunction(() => !document.querySelector('#run').disabled, null, { timeout: 600_000 });
-  const report = JSON.parse(await page.locator('#report').innerText());
+  const output = await page.locator('#report').innerText();
+  assert.ok(output.startsWith('{'), output);
+  const report = JSON.parse(output);
   report.browserVersion = browser.version();
   await mkdir('.data', { recursive: true });
   await writeFile(process.env.BENCH_OUTPUT || '.data/benchmark-latest.json', JSON.stringify(report, null, 2) + String.fromCharCode(10));

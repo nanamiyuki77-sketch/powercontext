@@ -14,7 +14,7 @@ npm run dev
 
 打开 <http://127.0.0.1:5173>。点击「导入示例」，然后搜索 `WebGPU`。添加自己的文件后，用同一知识库检索；修改知识库名称即可切换。访问 <http://127.0.0.1:5173/?wasm> 可强制使用 WASM。默认只监听本机。
 
-seekdb 默认运行在 Node.js 进程管理的嵌入式模式，数据位于 `.data/seekdb`，首次使用时原生绑定可能需要下载运行库。也可预先启动 seekdb 1.4.0，通过 `SEEKDB_HOST`、`SEEKDB_PORT`、`SEEKDB_USER`、`SEEKDB_PASSWORD`、`SEEKDB_DATABASE` 连接。嵌入式运行库与纯浏览器推理无关。若需构建后启动，先用 `npm run build`，再用 `npm start`。
+seekdb 默认运行在 Node.js 进程管理的嵌入式模式，数据位于 `.data/seekdb`（可用 `SEEKDB_DATA` 指定目录），首次使用时原生绑定可能需要下载运行库。也可预先启动 seekdb 1.4.0，通过 `SEEKDB_HOST`、`SEEKDB_PORT`、`SEEKDB_USER`、`SEEKDB_PASSWORD`、`SEEKDB_DATABASE` 连接。嵌入式运行库与纯浏览器推理无关。若需构建后启动，先用 `npm run build`，再用 `npm start`。
 
 ## 复现实验
 
